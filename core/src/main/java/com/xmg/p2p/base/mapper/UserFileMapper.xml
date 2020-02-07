@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xmg.p2p.base.mapper.UserFileMapper">
+
+	<resultMap id="BaseResultMap" type="UserFile">
+		<id column="id" property="id" jdbcType="BIGINT" />
+		<result column="image" property="image" jdbcType="VARCHAR" />
+		<result column="state" property="state" jdbcType="TINYINT" />
+		<result column="remark" property="remark" jdbcType="VARCHAR" />
+		<result column="auditTime" property="auditTime" jdbcType="TIMESTAMP" />
+		<result column="applyTime" property="applyTime" jdbcType="TIMESTAMP" />
+		<result column="score" property="score" jdbcType="TINYINT" />
+		<association property="applier" javaType="Logininfo"
+			columnPrefix="ap_">
+			<id column="id" property="id" />
+			<result column="username" property="username" />
+		</association>
+		<association property="fileType" javaType="SystemDictionaryItem"
+			columnPrefix="sd_">
+			<id column="id" property="id" />
+			<result column="title" property="title" />
+		</association>
+	</resultMap>
+
+	<resultMap id="FullResultMap" type="UserFile" extends="BaseResultMap">
+		<association property="auditor" javaType="Logininfo"
+			columnPrefix="au_">
+			<id column="id" property="id" />
+			<result column="username" property="username" />
+		</association>
+	</resultMap>
+
+	<resultMap id="UserListResultMap" type="UserFile">
+		<id column="id" property="id" jdbcType="BIGINT" />
+		<result column="image" property="image" jdbcType="VARCHAR" />
+		<result column="state" property="state" jdbcType="TINYINT" />
+		<result column="remark" property="remark" jdbcType="VARCHAR" />
+		<result column="auditTime" property="auditTime" jdbcType="TIMESTAMP" />
+		<result column="applyTime" property="applyTime" jdbcType="TIMESTAMP" />
+		<result column="score" property="score" jdbcType="TINYINT" />
+
+		<association property="fileType" javaType="SystemDictionaryItem"
+			columnPrefix="sd_">
+			<id column="id" property="id" />
+			<result column="title" property="title" />
+		</association>
+	</resultMap>
+
+	<insert id="insert" useGeneratedKeys="true" keyProperty="id">
+		insert into `userfile` (state, remark, auditTime, applyTime,
+		auditor_id, applier_id,
+		score, image, fileType_id)
+		values (#{state,jdbcType=TINYINT}, #{remark,jdbcType=VARCHAR},
+		#{auditTime,jdbcType=TIMESTAMP},
+		#{applyTime,jdbcType=TIMESTAMP}, #{auditor.id,jdbcType=BIGINT}, #{applier.id,jdbcType=BIGINT},
+		#{score,jdbcType=TINYINT}, #{image,jdbcType=VARCHAR},
+		#{fileType.id,jdbcType=BIGINT})
+	</insert>
+
+	<update id="updateByPrimaryKey">
+		update `userfile`
+		set state = #{state,jdbcType=TINYINT},
+		remark = #{remark,jdbcType=VARCHAR},
+		auditTime = #{auditTime,jdbcType=TIMESTAMP},
+		applyTime = #{applyTime,jdbcType=TIMESTAMP},
+		auditor_id = #{auditor.id,jdbcType=BIGINT},
+		applier_id = #{applier.id,jdbcType=BIGINT},
+		score = #{score,jdbcType=TINYINT},
+		image = #{image,jdbcType=VARCHAR},
+		fileType_id = #{fileType.id,jdbcType=BIGINT}
+		where id = #{id,jdbcType=BIGINT}
+	</update>
+
+	<select id="selectByPrimaryKey" resultMap="BaseResultMap">
+		select f.id, f.state, f.remark, f.auditTime, f.applyTime, f.auditor_id,
+		f.score, f.image,
+		ap.id as ap_id,ap.username as ap_username,sd.id as sd_id,sd.title as
+		sd_title
+		from `userfile` f JOIN logininfo ap ON f.applier_id = ap.id LEFT JOIN
+		systemdictionaryitem sd ON f.fileType_id = sd.id
+		where f.id = #{id,jdbcType=BIGINT}
+	</select>
+
+	<select id="selectAll" resultMap="BaseResultMap">
+		select id, state, remark, auditTime, applyTime, auditor_id, applier_id,
+		score, image,
+		fileType_id
+		from `userfile`
+	</select>
+
+	<select id="listFilesByHasType" resultMap="UserListResultMap">
+		SELECT f.id, f.state, f.remark, f.auditTime, f.applyTime,
+		f.auditor_id, f.score, f.image,
+		sd.id as sd_id,sd.title as sd_title
+		FROM userfile f LEFT JOIN systemdictionaryitem sd ON f.fileType_id = sd.id
+		WHERE applier_id = #{logininfoId}
+		<if test="hasType">
+			AND fileType_id is NOT NULL
+		</if>
+		<if test="!hasType">
+			AND fileType_id is NULL
+		</if>
+	</select>
+
+	<sql id="base_where">
+		<where>
+			<if test="beginDate!=null">
+				AND f.applyTime &gt;= #{beginDate}
+			</if>
+			<if test="endDate!=null">
+				AND f.applyTime &lt;=#{endDate}
+			</if>
+			<if test="state>-1">
+				AND f.state = #{state}
+			</if>
+			<if test="applierId!=null">
+				AND f.applier_id = #{applierId}
+			</if>
+			AND f.filetype_id IS NOT NULL
+		</where>
+	</sql>
+
+	<select id="queryForCount" resultType="int">
+		SELECT count(f.id)
+		FROM userfile f
+		<include refid="base_where" />
+	</select>
+
+	<select id="query" resultMap="FullResultMap">
+		SELECT f.id, f.state, f.remark, f.auditTime, f.applyTime,
+		f.auditor_id, f.score, f.image,
+		ap.id as ap_id,ap.username as ap_username,au.id as au_id,au.username as
+		au_username,
+		sd.id as sd_id,sd.title as sd_title
+		FROM userfile f JOIN logininfo ap on f.applier_id = ap.id LEFT JOIN
+		logininfo au on f.auditor_id = au.id
+		JOIN systemdictionaryitem sd on f.filetype_id = sd.id
+		<include refid="base_where" />
+		<if test="pageSize>0">
+		LIMIT #{start},#{pageSize}
+		</if>
+	</select>
+
+</mapper>

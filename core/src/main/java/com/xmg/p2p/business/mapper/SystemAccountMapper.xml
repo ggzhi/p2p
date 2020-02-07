@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xmg.p2p.business.mapper.SystemAccountMapper" >
+
+  <resultMap id="BaseResultMap" type="SystemAccount" >
+    <id column="id" property="id" jdbcType="BIGINT" />
+    <result column="version" property="version" jdbcType="INTEGER" />
+    <result column="usableAmount" property="usableAmount" jdbcType="DECIMAL" />
+    <result column="freezedAmount" property="freezedAmount" jdbcType="DECIMAL" />
+  </resultMap>
+  
+  <insert id="insert" useGeneratedKeys="true" keyProperty="id" >
+    insert into `systemaccount` (version, usableAmount, freezedAmount)
+    values (0, #{usableAmount,jdbcType=DECIMAL}, #{freezedAmount,jdbcType=DECIMAL})
+  </insert>
+  
+  <update id="updateByPrimaryKey">
+    update `systemaccount`
+    set version = version+1,
+      usableAmount = #{usableAmount,jdbcType=DECIMAL},
+      freezedAmount = #{freezedAmount,jdbcType=DECIMAL}
+    where id = #{id,jdbcType=BIGINT} AND version = #{version}
+  </update>
+  
+  <select id="selectCurrent" resultMap="BaseResultMap">
+    select id, version, usableAmount, freezedAmount
+    from `systemaccount`
+  </select>
+  
+  
+</mapper>

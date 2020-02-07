@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xmg.p2p.base.mapper.RealAuthMapper" >
+
+ <resultMap id="BaseResultMap" type="RealAuth" >
+    <id column="id" property="id" jdbcType="BIGINT" />
+    <result column="realName" property="realName"/>
+    <result column="sex" property="sex" jdbcType="TINYINT" />
+    <result column="bornDate" property="bornDate" jdbcType="VARCHAR" />
+    <result column="idNumber" property="idNumber" />
+    <result column="address" property="address" jdbcType="VARCHAR" />
+    <result column="state" property="state" jdbcType="TINYINT" />
+    <result column="image1" property="image1" jdbcType="VARCHAR" />
+    <result column="image2" property="image2" jdbcType="VARCHAR" />
+    <result column="remark" property="remark" jdbcType="VARCHAR" />
+    <result column="auditTime" property="auditTime" jdbcType="TIMESTAMP" />
+    <result column="applyTime" property="applyTime" jdbcType="TIMESTAMP" />
+  </resultMap>
+  
+  <resultMap id="FullResultMap" type="RealAuth" extends="BaseResultMap">
+     <association property="applier" javaType="Logininfo" columnPrefix="ap_">
+     	<id property="id" column="id"/>
+     	<result property="username" column="username"/>
+     </association>
+     
+     <association property="auditor" javaType="Logininfo" columnPrefix="au_">
+     	<id property="id" column="id"/>
+     	<result property="username" column="username"/>
+     </association>
+  </resultMap>
+  
+  <insert id="insert" useGeneratedKeys="true" keyProperty="ra.id" >
+    insert into `realauth` (realName, sex, bornDate, idNumber, address, state, 
+      image1, image2, remark,auditTime, applyTime, auditor_id,applier_id)
+    values (AES_ENCRYPT(#{ra.realName,jdbcType=VARCHAR},#{key}), #{ra.sex,jdbcType=TINYINT}, #{ra.bornDate,jdbcType=VARCHAR}, 
+      AES_ENCRYPT(#{ra.idNumber,jdbcType=VARCHAR},#{key}), #{ra.address,jdbcType=VARCHAR}, #{ra.state,jdbcType=TINYINT}, 
+      #{ra.image1,jdbcType=VARCHAR}, #{ra.image2,jdbcType=VARCHAR}, #{ra.remark,jdbcType=VARCHAR}, 
+      #{ra.auditTime,jdbcType=TIMESTAMP}, #{ra.applyTime,jdbcType=TIMESTAMP}, #{ra.auditor.id,jdbcType=BIGINT}, 
+      #{ra.applier.id,jdbcType=BIGINT})
+  </insert>
+  
+  <update id="updateByPrimaryKey">
+    update `realauth`
+    set sex = #{sex,jdbcType=TINYINT},
+      bornDate = #{bornDate,jdbcType=VARCHAR},
+      address = #{address,jdbcType=VARCHAR},
+      state = #{state,jdbcType=TINYINT},
+      image1 = #{image1,jdbcType=VARCHAR},
+      image2 = #{image2,jdbcType=VARCHAR},
+      remark = #{remark,jdbcType=VARCHAR},
+      auditTime = #{auditTime,jdbcType=TIMESTAMP},
+      applyTime = #{applyTime,jdbcType=TIMESTAMP},
+      auditor_id = #{auditor.id,jdbcType=BIGINT},
+      applier_id = #{applier.id,jdbcType=BIGINT}
+    where id = #{id,jdbcType=BIGINT}
+  </update>
+  
+  <sql id="base_column">
+  	id, CONVERT(AES_DECRYPT(realName,#{key}) USING UTF8) as realName, sex, bornDate, AES_DECRYPT(idNumber,#{key}) as idNumber, address, state, image1, image2, remark, 
+    auditTime, applyTime
+  </sql>
+  
+  <sql id="full_column">
+  	r.id, CONVERT(AES_DECRYPT(realName,#{key}) USING UTF8) as realName, r.sex, r.bornDate, AES_DECRYPT(r.idNumber,#{key}) as idNumber, r.address, r.state, r.image1, r.image2, r.remark, 
+    r.auditTime, r.applyTime,ap.id as ap_id,ap.username as ap_username,au.id as au_id,au.username as au_username
+  </sql>
+  
+  <select id="selectByPrimaryKey" resultMap="FullResultMap">
+    select <include refid="full_column" />
+    from `realauth` r JOIN logininfo ap ON r.applier_id=ap.id LEFT JOIN logininfo au ON r.auditor_id = au.id
+    where r.id = #{id,jdbcType=BIGINT}
+  </select>
+  
+  <sql id="base_where">
+  	<where>
+  		<if test="qo.beginDate!=null">
+  			AND r.applyTime &gt;= #{qo.beginDate}
+  		</if>
+  		<if test="qo.endDate!=null">
+  			AND r.applyTime &lt;=#{qo.endDate}
+  		</if>
+  		<if test="qo.state>-1">
+  			AND r.state = #{qo.state}
+  		</if>
+  	</where>
+  </sql>
+  
+  <select id="queryForCount" resultType="int">
+  	SELECT count(id) FROM realauth r
+  	<include refid="base_where" />
+  </select>
+  
+  <select id="query" resultMap="FullResultMap">
+  	select <include refid="full_column" />
+    from `realauth` r JOIN logininfo ap ON r.applier_id=ap.id LEFT JOIN logininfo au ON r.auditor_id = au.id
+    <include refid="base_where" />
+    LIMIT #{qo.start},#{qo.pageSize}
+  </select>
+ 
+</mapper>

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xmg.p2p.base.mapper.UserinfoMapper" >
+
+  <resultMap id="BaseResultMap" type="com.xmg.p2p.base.domain.Userinfo" >
+    <id column="id" property="id" jdbcType="BIGINT" />
+    <result column="version" property="version" jdbcType="INTEGER" />
+    <result column="bitState" property="bitState" jdbcType="BIGINT" />
+    <result column="realName" property="realName" jdbcType="VARCHAR" />
+    <result column="idNumber" property="idNumber" jdbcType="VARCHAR" />
+    <result column="email" property="email" jdbcType="VARCHAR" />
+    <result column="phoneNumber" property="phoneNumber" jdbcType="VARCHAR" />
+    <result column="score" property="score"/>
+     <result column="realAuthId" property="realAuthId"/>
+     
+    <association property="incomeGrade" javaType="SystemDictionaryItem" column="incomeGrade_id" select="com.xmg.p2p.base.mapper.SystemDictionaryItemMapper.selectByPrimaryKey" />
+    <association property="marriage" javaType="SystemDictionaryItem" column="marriage_id" select="com.xmg.p2p.base.mapper.SystemDictionaryItemMapper.selectByPrimaryKey" />
+    <association property="kidCount" javaType="SystemDictionaryItem" column="kidCount_id" select="com.xmg.p2p.base.mapper.SystemDictionaryItemMapper.selectByPrimaryKey" />
+    <association property="educationBackground" javaType="SystemDictionaryItem" column="educationBackground_id" select="com.xmg.p2p.base.mapper.SystemDictionaryItemMapper.selectByPrimaryKey" />
+    <association property="houseCondition" javaType="SystemDictionaryItem" column="houseCondition_id" select="com.xmg.p2p.base.mapper.SystemDictionaryItemMapper.selectByPrimaryKey" />
+  </resultMap>
+  
+  <insert id="insert">
+    insert into `userinfo` (id,version, bitState, realName,idNumber, phoneNumber, incomeGrade_id, email,score,realAuthId,
+		marriage_id, kidCount_id, educationBackground_id,houseCondition_id)
+    values(#{id},0, #{bitState,jdbcType=BIGINT}, #{realName,jdbcType=VARCHAR}, 
+      #{idNumber,jdbcType=VARCHAR}, #{phoneNumber,jdbcType=VARCHAR}, #{incomeGrade.id,jdbcType=BIGINT}, #{email},#{score},#{realAuthId},
+      #{marriage.id,jdbcType=BIGINT}, #{kidCount.id,jdbcType=BIGINT}, #{educationBackground.id,jdbcType=BIGINT}, 
+      #{houseCondition.id,jdbcType=BIGINT})
+  </insert>
+  <update id="updateByPrimaryKey">
+    update `userinfo`
+    set version = version+1,
+      bitState = #{bitState,jdbcType=BIGINT},
+      realName = #{realName,jdbcType=VARCHAR},
+      idNumber = #{idNumber,jdbcType=VARCHAR},
+      email = #{email,jdbcType=VARCHAR},
+      score = #{score},
+      realAuthId = #{realAuthId},
+      phoneNumber = #{phoneNumber,jdbcType=VARCHAR},
+      incomeGrade_id = #{incomeGrade.id,jdbcType=BIGINT},
+      marriage_id = #{marriage.id,jdbcType=BIGINT},
+      kidCount_id = #{kidCount.id,jdbcType=BIGINT},
+      educationBackground_id = #{educationBackground.id,jdbcType=BIGINT},
+      houseCondition_id = #{houseCondition.id,jdbcType=BIGINT}
+    where id = #{id,jdbcType=BIGINT} AND version = #{version}
+  </update>
+  
+  <sql id="base_column">
+  id, version, bitState, realName, idNumber, phoneNumber, incomeGrade_id, marriage_id, email,score,realAuthId,
+    kidCount_id, educationBackground_id, houseCondition_id
+  </sql>
+  
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap">
+    select <include refid="base_column" />
+    from `userinfo`
+    where id = #{id,jdbcType=BIGINT}
+  </select>
+  
+  <select id="autocomplate" resultType="hashmap">
+  	SELECT id,username
+  	FROM logininfo WHERE username LIKE concat(#{keyword},'%')
+  </select>
+</mapper>

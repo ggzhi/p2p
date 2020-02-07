@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xmg.p2p.business.mapper.PaymentScheduleMapper" >
+
+  <resultMap id="BaseResultMap" type="PaymentSchedule" >
+    <id column="id" property="id" jdbcType="BIGINT" />
+    <result column="deadLine" property="deadLine" jdbcType="TIMESTAMP" />
+    <result column="payDate" property="payDate" jdbcType="TIMESTAMP" />
+    <result column="totalAmount" property="totalAmount" jdbcType="DECIMAL" />
+    <result column="principal" property="principal" jdbcType="DECIMAL" />
+    <result column="interest" property="interest" jdbcType="DECIMAL" />
+    <result column="monthIndex" property="monthIndex" jdbcType="TINYINT" />
+    <result column="state" property="state" jdbcType="TINYINT" />
+    <result column="bidRequestType" property="bidRequestType" jdbcType="TINYINT" />
+    <result column="returnType" property="returnType" jdbcType="TINYINT" />
+    <result column="bidRequest_id" property="bidRequestId" jdbcType="BIGINT" />
+    <result column="bidRequestTitle" property="bidRequestTitle" jdbcType="VARCHAR" />
+    
+    <association property="borrowUser" javaType="Logininfo" columnPrefix="b_">
+    	<id column="id" property="id"/>
+    	<result column="username" property="username"/>
+    </association>
+    
+    <collection property="paymentScheduleDetails" column="id" ofType="PaymentScheduleDetail" select="com.xmg.p2p.business.mapper.PaymentScheduleDetailMapper.selectByPaymentSchedule" />
+  </resultMap>
+  
+  <insert id="insert" useGeneratedKeys="true" keyProperty="id" >
+    insert into `paymentschedule` (deadLine, payDate, totalAmount,principal, interest, monthIndex, 
+      state, bidRequestType, returnType, bidRequest_id, borrowUser_id, bidRequestTitle)
+    values (#{deadLine,jdbcType=TIMESTAMP}, #{payDate,jdbcType=TIMESTAMP}, #{totalAmount,jdbcType=DECIMAL}, 
+      #{principal,jdbcType=DECIMAL}, #{interest,jdbcType=DECIMAL}, #{monthIndex,jdbcType=TINYINT}, 
+      #{state,jdbcType=TINYINT}, #{bidRequestType,jdbcType=TINYINT}, #{returnType,jdbcType=TINYINT}, 
+      #{bidRequestId,jdbcType=BIGINT}, #{borrowUser.id,jdbcType=BIGINT}, #{bidRequestTitle,jdbcType=VARCHAR})
+  </insert>
+  
+  <update id="updateByPrimaryKey" >
+    update `paymentschedule`
+    set deadLine = #{deadLine,jdbcType=TIMESTAMP},
+      payDate = #{payDate,jdbcType=TIMESTAMP},
+      totalAmount = #{totalAmount,jdbcType=DECIMAL},
+      principal = #{principal,jdbcType=DECIMAL},
+      interest = #{interest,jdbcType=DECIMAL},
+      monthIndex = #{monthIndex,jdbcType=TINYINT},
+      state = #{state,jdbcType=TINYINT},
+      bidRequestType = #{bidRequestType,jdbcType=TINYINT},
+      returnType = #{returnType,jdbcType=TINYINT},
+      bidRequest_id = #{bidRequestId,jdbcType=BIGINT},
+      borrowUser_id = #{borrowUser.id,jdbcType=BIGINT},
+      bidRequestTitle = #{bidRequestTitle,jdbcType=VARCHAR}
+    where id = #{id,jdbcType=BIGINT}
+  </update>
+  
+  <sql id="base_where">
+  	<where>
+  		<if test="userid!=null">
+  			AND p.borrowUser_id = #{userid}
+  		</if>
+  		<if test="bidRequestId!=null">
+  			AND p.bidRequest_id = #{bidRequestId}
+  		</if>
+  		<if test="beginDate!=null">
+  			AND p.deadLine &gt;= #{beginDate}
+  		</if>
+  		<if test="endDate!=null">
+  			AND p.deadLine &lt;=#{endDate}
+  		</if>
+  		<if test="state>-1">
+  			AND p.state = #{state}
+  		</if>
+  	</where>
+  </sql>
+  
+  <sql id="base_column">
+  	p.id, p.deadLine, p.payDate, p.totalAmount, p.principal, p.interest, p.monthIndex, p.state, 
+    p.bidRequestType, p.returnType, p.bidRequest_id, p.bidRequestTitle,
+    b.id as b_id,b.username as b_username
+  </sql>
+  
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Long" >
+    select <include refid="base_column" />
+    from `paymentschedule` p join logininfo b on p.borrowUser_id = b.id
+    where p.id = #{id,jdbcType=BIGINT}
+  </select>
+  
+  <select id="queryForCount" resultType="int">
+  	SELECT count(p.id) FROM paymentschedule p
+  	<include refid="base_where"/>
+  </select>
+  
+  <select id="query" resultMap="BaseResultMap">
+  	SELECT <include refid="base_column" />
+  	FROM `paymentschedule` p join logininfo b on p.borrowUser_id = b.id
+  	<include refid="base_where" />
+  	<if test="pageSize>-1">
+  		LIMIT #{start},#{pageSize}
+  	</if>
+  </select>
+  
+  
+  
+  
+</mapper>
